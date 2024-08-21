@@ -24,6 +24,8 @@
 #include    <sys/movedata.h>
 #define inp	inportb
 #define outp outportb
+#elif defined(WATCOM)
+#include <conio.h>
 #endif
 
 struct plScnInfo

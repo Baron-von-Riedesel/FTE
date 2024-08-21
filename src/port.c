@@ -196,6 +196,8 @@ int plSetdisk(int drive)
 /*--------------------------------------------------------------------------*/
 #if defined(__DOS4G__)		// Defined when compiled with Watcom for Dos4GW
 #include	<i86.h>
+#include <string.h>
+#include <ctype.h>
 
 #define HIWORD(x)		( (UWORD) ((x) >> 16))
 #define LOWORD(x)		( (UWORD) (x))

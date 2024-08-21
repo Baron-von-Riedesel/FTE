@@ -1,24 +1,22 @@
 
-# create DOS32 binary with Open Watcom v2.0, HX and JWlink.
-
-# if OW Wlink is to be used instead of JWlink:
-#  - change "format windows pe hx" to "format windows pe"
-#  - apply HX's patchpe tool to the binary after the link step
+# create Win32 binary with Open Watcom v2.0
 
 CC       = \ow20\binnt\wcc386
 CPP      = \ow20\binnt\wpp386
-LD       = jwlink
+LD       = \ow20\binnt\wlink
+LIB      = \ow20\binnt\wlib.exe
 LIBDIRC  = \ow20\lib386
+LIBDIRW  = \ow20\lib386\nt
 
-INCDIR    = -i=\ow20\H
+INCDIR    = -i=\ow20\H -i=\ow20\H\NT
 
-ODIR  = ..\build
+ODIR = ..\build
 
 #OPTIMIZE  = /d2
 #OPTIMIZE  = /d1 /onatx /oe=40
 OPTIMIZE  = /oxa /s
 
-CCFLAGS   = /q /bt=dos /zp4 /5r /fp3 /j $(OPTIMIZE) $(INCDIR) /dDOSP32 /d__32BIT__ /dWATCOM /d__DOS4G__ /d__WATCOM_LFN__ /fo$@
+CCFLAGS   = /q /bt=nt /5r /fp3 /j $(OPTIMIZE) $(INCDIR) /dNT /dNTCONSOLE /dWIN32 /d_CONSOLE /dWATCOM /fo$@
 LDFLAGS   = 
 
 OBJS = &
@@ -97,33 +95,29 @@ $(ODIR)/fte.obj &
 $(ODIR)/commands.obj &
 $(ODIR)/log.obj
 
-DOSP32OBJS = &
-$(ODIR)/memicmp.obj &
-$(ODIR)/port.obj &
-$(ODIR)/portdos.obj &
+NTOBJS = &
 $(ODIR)/g_text.obj &
 $(ODIR)/menu_text.obj &
-$(ODIR)/con_dosx.obj &
-$(ODIR)/clip_no.obj &
+$(ODIR)/con_nt.obj &
+$(ODIR)/clip_os2.obj &
 $(ODIR)/g_nodlg.obj &
-$(ODIR)/e_djgpp2.obj
+$(ODIR)/e_win32.obj
 
 CFTE_OBJS = &
 $(ODIR)/cfte.obj &
 $(ODIR)/s_files.obj &
-$(ODIR)/port.obj &
 $(ODIR)/memicmp.obj
 
-FTE_OBJS = $(OBJS) $(DOSP32OBJS)
+FTE_OBJS = $(OBJS) $(NTOBJS)
 
-.cpp{$(ODIR)}.obj:
+.cpp{$(OUTD)}.obj:
 	@$(CPP) $(CCFLAGS) $<
 
-.c{$(ODIR)}.obj:
-	@$(CC)  $(CCFLAGS) $<
+.c{$(OUTD)}.obj:
+	@$(CC) $(CCFLAGS) $<
 
 
-build: $(ODIR)\fte.exe
+build: $(ODIR) $(ODIR)\fte.exe
 
 $(ODIR):
 	@mkdir $(ODIR)
@@ -131,43 +125,40 @@ $(ODIR):
 $(ODIR)\c_config.obj: $(ODIR)\defcfg.h
 	@$(CPP) $(CCFLAGS) -i=$(ODIR) c_config.cpp
 
-$(ODIR)\bin2c.obj: bin2c.cpp
-	@$(CPP) $(CCFLAGS) bin2c.cpp
-
-$(ODIR)\bin2c.exe: $(ODIR)\bin2c.obj
-	@$(LD) $(LDFLAGS) @<<
-format windows pe hx runtime console
-NAME $(ODIR)\bin2c.exe
-FILE $(ODIR)\bin2c.obj
-libpath $(LIBDIRC)\dos;$(LIBDIRC)
-libfile cstrtdhr.obj, inirmlfn.obj
-OP QUIET,STACK=16k,stub=\hx\bin\loadpero.bin
-<<
-
-$(ODIR)\cfte.exe: $(CFTE_OBJS)
-	@$(LD) $(LDFLAGS) @<<
-format windows pe hx runtime console
-NAME $(ODIR)\cfte.exe
-FILE { $(CFTE_OBJS) }
-libpath $(LIBDIRC)\dos;$(LIBDIRC)
-libfile cstrtdhr.obj, inirmlfn.obj
-OP QUIET,STACK=16k,stub=\hx\bin\loadpero.bin
-<<
-
 $(ODIR)\defcfg.cnf: defcfg.fte $(ODIR)\cfte.exe
 	@$(ODIR)\cfte defcfg.fte $(ODIR)\defcfg.cnf
 
 $(ODIR)\defcfg.h: $(ODIR)\defcfg.cnf $(ODIR)\bin2c.exe
 	@$(ODIR)\bin2c $(ODIR)\defcfg.cnf >$(ODIR)\defcfg.h
 
+$(ODIR)\bin2c.exe: $(ODIR)\bin2c.obj
+	@$(LD) $(LDFLAGS) @<<
+format windows pe runtime console
+NAME $(ODIR)\bin2c.exe
+FILE $(ODIR)\bin2c.obj
+libpath $(LIBDIRW);$(LIBDIRC)
+lib kernel32,user32
+OP QUIET
+<<
+
+$(ODIR)\cfte.exe: $(CFTE_OBJS)
+	@$(LD) $(LDFLAGS) @<<
+format windows pe runtime console
+NAME $(ODIR)\cfte.exe
+FILE { $(CFTE_OBJS) }
+libpath $(LIBDIRW);$(LIBDIRC)
+lib kernel32,user32
+OP QUIET
+<<
+
 $(ODIR)\fte.exe: $(ODIR)\bin2c.exe $(ODIR)\cfte.exe $(ODIR)\defcfg.h $(FTE_OBJS)
-	$(LD) $(LDFLAGS) @<<
-format windows pe hx runtime console
+	@$(LD) $(LDFLAGS) @<<
+format windows pe runtime console
 NAME $(ODIR)\fte.exe
 FILE { $(FTE_OBJS) }
-libpath $(LIBDIRC)\dos;$(LIBDIRC)
-libfile cstrtdhr.obj, inirmlfn.obj
-OP QUIET,MAP=$*,STACK=64k,stub=\hx\bin\loadpero.bin
+libpath $(LIBDIRW);$(LIBDIRC)
+lib kernel32,user32
+OP QUIET,MAP=$*
 <<
 
 clean: .SYMBOLIC
