@@ -94,6 +94,7 @@ colorize ASM {
         'jmp',
         'je', 'jne',
         'jz', 'jnz',
+        'jc', 'jnc',
         'jl', 'jle', 'jg', 'jge',
         'jnge', 'jng', 'jnle', 'jnl',
         'jb', 'jbe', 'ja', 'jae',
@@ -111,13 +112,12 @@ colorize ASM {
     
     keyword 'Editor_Keywords5' {
         'assume', 'label', 'group',
-        'public', 'extrn',
+        'public', 'extrn', 'externdef',
         'macro', 'endm',
         'end',
-        'proc', 'endp', 'equ', 'define',
-        'segment', 'section', 'seg', 'wrt', 'ends', 'use32', 'use16',
+        'proc', 'endp', 'equ', 'invoke', 'define',
+        'segment', 'struct', 'section', 'seg', 'wrt', 'ends', 'use32', 'use16',
         'db', 'dw', 'dd', 'dq', 'dt',
-        'resb', 'resw', 'resd', 'resq', 'rest',
 
         'model', 'ideal', 'codeseg', 'dataseg', 'stack', 'include', 'locals',
         'incbin', 'bits', 'times' ,'org',

@@ -9,6 +9,7 @@ CC       = \ow20\binnt\wcc386
 CPP      = \ow20\binnt\wpp386
 LD       = jwlink
 LIBDIRC  = \ow20\lib386
+HXDIRB   = \hx\bin
 
 INCDIR    = -i=\ow20\H
 
@@ -141,7 +142,7 @@ NAME $(ODIR)\bin2c.exe
 FILE $(ODIR)\bin2c.obj
 libpath $(LIBDIRC)\dos;$(LIBDIRC)
 libfile cstrtdhr.obj, inirmlfn.obj
-OP QUIET,STACK=16k,stub=\hx\bin\loadpero.bin
+OP QUIET,STACK=16k,stub=$(HXDIRB)\loadpero.bin
 <<
 
 $(ODIR)\cfte.exe: $(CFTE_OBJS)
@@ -151,7 +152,7 @@ NAME $(ODIR)\cfte.exe
 FILE { $(CFTE_OBJS) }
 libpath $(LIBDIRC)\dos;$(LIBDIRC)
 libfile cstrtdhr.obj, inirmlfn.obj
-OP QUIET,STACK=16k,stub=\hx\bin\loadpero.bin
+OP QUIET,STACK=16k,stub=$(HXDIRB)\loadpero.bin
 <<
 
 $(ODIR)\defcfg.cnf: defcfg.fte $(ODIR)\cfte.exe
@@ -166,8 +167,8 @@ format windows pe hx runtime console
 NAME $(ODIR)\fte.exe
 FILE { $(FTE_OBJS) }
 libpath $(LIBDIRC)\dos;$(LIBDIRC)
-libfile cstrtdhr.obj, inirmlfn.obj
-OP QUIET,MAP=$*,STACK=64k,stub=\hx\bin\loadpero.bin
+libfile cstrtdhr.obj, inirmlfn.obj, spawn-hx.obj
+OP QUIET,MAP=$*,STACK=64k,stub=$(HXDIRB)\loadpero.bin
 <<
 
 clean: .SYMBOLIC
