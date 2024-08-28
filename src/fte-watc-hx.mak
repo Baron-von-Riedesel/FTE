@@ -1,6 +1,9 @@
 
 # create DOS32 binary with Open Watcom v2.0, HX and JWlink.
 
+# OW's DOS32 memory management is pretty slow, so using this variant
+# to edit very large files takes quite some time to load.
+
 # if OW Wlink is to be used instead of JWlink:
 #  - change "format windows pe hx" to "format windows pe"
 #  - apply HX's patchpe tool to the binary after the link step
@@ -124,16 +127,29 @@ FTE_OBJS = $(OBJS) $(DOSP32OBJS)
 	@$(CC)  $(CCFLAGS) $<
 
 
-build: $(ODIR)\fte.exe
+build: $(ODIR) $(ODIR)\fte.exe
 
 $(ODIR):
 	@mkdir $(ODIR)
 
+$(ODIR)\fte.exe: $(ODIR)\defcfg.h $(FTE_OBJS)
+	@$(LD) $(LDFLAGS) @<<
+format windows pe hx runtime console
+NAME $(ODIR)\fte.exe
+FILE { $(FTE_OBJS) }
+libpath $(LIBDIRC)\dos;$(LIBDIRC)
+libfile cstrtdhr.obj, inirmlfn.obj, spawn-hx.obj
+OP QUIET,MAP=$*,STACK=64k,stub=$(HXDIRB)\loadpero.bin
+<<
+
 $(ODIR)\c_config.obj: $(ODIR)\defcfg.h
 	@$(CPP) $(CCFLAGS) -i=$(ODIR) c_config.cpp
 
-$(ODIR)\bin2c.obj: bin2c.cpp
-	@$(CPP) $(CCFLAGS) bin2c.cpp
+$(ODIR)\defcfg.h: $(ODIR)\defcfg.cnf $(ODIR)\bin2c.exe
+	@$(ODIR)\bin2c $(ODIR)\defcfg.cnf >$(ODIR)\defcfg.h
+
+$(ODIR)\defcfg.cnf: defcfg.fte $(ODIR)\cfte.exe
+	@$(ODIR)\cfte defcfg.fte $(ODIR)\defcfg.cnf
 
 $(ODIR)\bin2c.exe: $(ODIR)\bin2c.obj
 	@$(LD) $(LDFLAGS) @<<
@@ -153,22 +169,6 @@ FILE { $(CFTE_OBJS) }
 libpath $(LIBDIRC)\dos;$(LIBDIRC)
 libfile cstrtdhr.obj, inirmlfn.obj
 OP QUIET,STACK=16k,stub=$(HXDIRB)\loadpero.bin
-<<
-
-$(ODIR)\defcfg.cnf: defcfg.fte $(ODIR)\cfte.exe
-	@$(ODIR)\cfte defcfg.fte $(ODIR)\defcfg.cnf
-
-$(ODIR)\defcfg.h: $(ODIR)\defcfg.cnf $(ODIR)\bin2c.exe
-	@$(ODIR)\bin2c $(ODIR)\defcfg.cnf >$(ODIR)\defcfg.h
-
-$(ODIR)\fte.exe: $(ODIR)\bin2c.exe $(ODIR)\cfte.exe $(ODIR)\defcfg.h $(FTE_OBJS)
-	$(LD) $(LDFLAGS) @<<
-format windows pe hx runtime console
-NAME $(ODIR)\fte.exe
-FILE { $(FTE_OBJS) }
-libpath $(LIBDIRC)\dos;$(LIBDIRC)
-libfile cstrtdhr.obj, inirmlfn.obj, spawn-hx.obj
-OP QUIET,MAP=$*,STACK=64k,stub=$(HXDIRB)\loadpero.bin
 <<
 
 clean: .SYMBOLIC

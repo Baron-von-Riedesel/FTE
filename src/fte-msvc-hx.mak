@@ -57,32 +57,10 @@ RCFLAGS   = -i $(INCDIRW)
 .c{$(ODIR)}.$(OEXT):
 	@$(CC) $(CCFLAGS) -c $<
 
-all: $(ODIR) $(ODIR)\cfte.exe $(ODIR)\fte.cnf $(ODIR)\fte.exe $(ODIR)\ftew.exe
+all: $(ODIR) $(ODIR)\fte.exe $(ODIR)\ftew.exe $(ODIR)\fte.cnf 
 
 $(ODIR):
 	@mkdir $(ODIR)
-
-$(ODIR)\cfte.exe: $(CFTE_OBJS:./=..\build\)
-	@cd $(ODIR)
-	@$(LD) $(LDFLAGS) /libpath:$(LIBDIRW) /out:cfte.exe $(CFTE_OBJS:./=)
-	@cd ..\src
-
-$(ODIR)\defcfg.cnf: defcfg.fte $(ODIR)\cfte.exe
-	@$(ODIR)\cfte defcfg.fte $(ODIR)\defcfg.cnf
-
-$(ODIR)\defcfg.h: $(ODIR)\defcfg.cnf $(ODIR)\bin2c.exe
-	@$(ODIR)\bin2c $(ODIR)\defcfg.cnf >$(ODIR)\defcfg.h
-
-$(ODIR)\fte.cnf: ..\config\* $(ODIR)\cfte.exe
-	@cd $(ODIR)
-	@cfte ..\config\main.fte fte.cnf
-	@cd ..\src
-
-$(ODIR)\bin2c.exe: bin2c.cpp
-	@$(CC) $(CCFLAGS) /Fe$(ODIR)\bin2c.exe bin2c.cpp /link /libpath:$(LIBDIRC) /libpath:$(LIBDIRW)
-
-$(ODIR)\c_config.$(OEXT): $(ODIR)\defcfg.h
-	@$(CC) $(CCFLAGS) -I $(ODIR) -c c_config.cpp
 
 $(ODIR)\fte.exe: $(ODIR)\fte.obj $(ODIR)\fte.lib
 	@cd $(ODIR)
@@ -105,6 +83,26 @@ fte.obj fte.lib ftewin32.res
 libcmt.lib libcpmt.lib oldnames.lib 
 <<
 	@cd ..\src
+
+$(ODIR)\cfte.exe: $(CFTE_OBJS:./=..\build\)
+	@cd $(ODIR)
+	@$(LD) $(LDFLAGS) /libpath:$(LIBDIRW) /out:cfte.exe $(CFTE_OBJS:./=)
+	@cd ..\src
+
+$(ODIR)\defcfg.cnf: defcfg.fte $(ODIR)\cfte.exe
+	@$(ODIR)\cfte defcfg.fte $(ODIR)\defcfg.cnf
+
+$(ODIR)\defcfg.h: $(ODIR)\defcfg.cnf $(ODIR)\bin2c.exe
+	@$(ODIR)\bin2c $(ODIR)\defcfg.cnf >$(ODIR)\defcfg.h
+
+$(ODIR)\fte.cnf: ..\config\* $(ODIR)\cfte.exe
+	@$(ODIR)\cfte.exe ..\config\main.fte $(ODIR)\fte.cnf
+
+$(ODIR)\bin2c.exe: bin2c.cpp
+	@$(CC) $(CCFLAGS) /Fe$(ODIR)\bin2c.exe bin2c.cpp /link /libpath:$(LIBDIRC) /libpath:$(LIBDIRW)
+
+$(ODIR)\c_config.$(OEXT): $(ODIR)\defcfg.h
+	@$(CC) $(CCFLAGS) -I $(ODIR) -c c_config.cpp
 
 $(ODIR)\fte.lib: $(OBJS:./=..\build\) $(NTOBJS:./=..\build\)
 	@cd $(ODIR)

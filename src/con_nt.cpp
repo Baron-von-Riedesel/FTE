@@ -694,7 +694,7 @@ int ConQuerySize(int *X, int *Y) { /*FOLD00*/
     *X = csbi.dwSize.X;
     *Y = csbi.dwSize.Y;
 
-    dbg("Console size (%u,%u)\n", *X, *Y);
+    //dbg("Console size (%u,%u)\n", *X, *Y);
     return 0;
 }
 

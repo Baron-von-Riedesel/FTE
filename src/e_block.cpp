@@ -773,8 +773,12 @@ static int SortReverse;
 static int *SortRows = 0;
 static int SortMinRow;
 static int SortMaxRow;
-static int SortMinCol;
-static int SortMaxCol;
+static int SortMinCol; /* -1 = sort stream */
+static int SortMaxCol; /* -1 = sort stream */
+#define SORTLOG 0
+#if SORTLOG
+static FILE *logfile;
+#endif
 
 static int _LNK_CONV SortProc(const void *A, const void *B) {
     int *AA = (int *)A;
@@ -787,6 +791,9 @@ static int _LNK_CONV SortProc(const void *A, const void *B) {
         int lA = LA->Count;
         int lB = LB->Count;
 
+#if SORTLOG
+        fprintf( logfile, "SortProc( %.20s[%u] - %.20s[%u]\n", LA->Chars, *AA, LB->Chars, *BB );
+#endif
         if (BFI(SortBuffer, BFI_MatchCase) == 1)
             rc = memcmp(LA->Chars, LB->Chars, (lA < lB) ? lA : lB);
         else
@@ -794,7 +801,8 @@ static int _LNK_CONV SortProc(const void *A, const void *B) {
         if (rc == 0) {
             if (lA > lB)
                 rc = 1;
-            else
+            //else /* v0.51: don't return -1 if strings are identical */
+            else if ( lA < lB )
                 rc = -1;
         }
     } else {
@@ -868,13 +876,21 @@ int EBuffer::BlockSort(int Reverse) {
 
     SortRows = (int *)malloc((SortMaxRow - SortMinRow + 1) * sizeof(int));
     if (SortRows == 0) {
-        free(SortRows);
+        //free(SortRows);
         return 0;
     }
     for (rq = 0; rq <= SortMaxRow - SortMinRow; rq++)
         SortRows[rq] = rq + SortMinRow;
 
+#if SORTLOG
+    logfile = fopen("FTESORT.LOG","w");
+#endif
+
     qsort(SortRows, SortMaxRow - SortMinRow + 1, sizeof(int), SortProc);
+
+#if SORTLOG
+    fclose(logfile);
+#endif
 
     // now change the order of lines according to new order in Rows array.
 

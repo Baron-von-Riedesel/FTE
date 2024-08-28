@@ -1,5 +1,10 @@
 
-# create Win32 binary with Open Watcom v2.0
+# create Win32 binary with Open Watcom v2.0.
+
+# may also be used to create a DOS32 binary with statically linked
+# HX's Win32 emulation code. Compared with OW's "true" DOS32 binary,
+# this variant has the benefit that it loads way faster when
+# large files are to be edited. 
 
 CC       = \ow20\binnt\wcc386
 CPP      = \ow20\binnt\wpp386
@@ -9,6 +14,23 @@ LIBDIRC  = \ow20\lib386
 LIBDIRW  = \ow20\lib386\nt
 
 INCDIR    = -i=\ow20\H -i=\ow20\H\NT
+
+!ifndef DOS
+DOS = 0
+!endif
+
+!if $(DOS)
+HXDIR    = \hx
+LINKDOS  = jwlink
+RELOCS=1
+!if $(RELOCS)
+STUB=loadpero
+DOSLFLAGS=
+!else
+STUB=loadpxnr
+DOSLFLAGS=op norelocs
+!endif
+!endif
 
 ODIR = ..\build
 
@@ -122,14 +144,37 @@ build: $(ODIR) $(ODIR)\fte.exe
 $(ODIR):
 	@mkdir $(ODIR)
 
+$(ODIR)\fte.exe: $(ODIR)\defcfg.h $(FTE_OBJS)
+!if !$(DOS)
+	@$(LD) $(LDFLAGS) @<<
+format windows pe runtime console
+NAME $(ODIR)\fte.exe
+FILE { $(FTE_OBJS) }
+libpath $(LIBDIRW);$(LIBDIRC)
+lib kernel32,user32
+OP Q,MAP=$*
+<<
+!else
+	@$(LINKDOS) $(LDFLAGS) @<<
+format windows pe hx runtime console
+NAME $(ODIR)\fte.exe
+FILE { $(FTE_OBJS) }
+libpath $(LIBDIRW);$(LIBDIRC);$(HXDIR)\Lib
+lib imphlp,dkrnl32s,duser32s
+libfile initw3ow.obj, msgbox.obj, getmodh.obj
+disable 1030
+OP Q,MAP=$*,STUB=$(HXDIR)\Bin\$(STUB).bin $(DOSLFLAGS)
+<<
+!endif
+
 $(ODIR)\c_config.obj: $(ODIR)\defcfg.h
 	@$(CPP) $(CCFLAGS) -i=$(ODIR) c_config.cpp
 
-$(ODIR)\defcfg.cnf: defcfg.fte $(ODIR)\cfte.exe
-	@$(ODIR)\cfte defcfg.fte $(ODIR)\defcfg.cnf
-
 $(ODIR)\defcfg.h: $(ODIR)\defcfg.cnf $(ODIR)\bin2c.exe
 	@$(ODIR)\bin2c $(ODIR)\defcfg.cnf >$(ODIR)\defcfg.h
+
+$(ODIR)\defcfg.cnf: defcfg.fte $(ODIR)\cfte.exe
+	@$(ODIR)\cfte defcfg.fte $(ODIR)\defcfg.cnf
 
 $(ODIR)\bin2c.exe: $(ODIR)\bin2c.obj
 	@$(LD) $(LDFLAGS) @<<
@@ -138,7 +183,7 @@ NAME $(ODIR)\bin2c.exe
 FILE $(ODIR)\bin2c.obj
 libpath $(LIBDIRW);$(LIBDIRC)
 lib kernel32,user32
-OP QUIET
+OP Q
 <<
 
 $(ODIR)\cfte.exe: $(CFTE_OBJS)
@@ -148,17 +193,7 @@ NAME $(ODIR)\cfte.exe
 FILE { $(CFTE_OBJS) }
 libpath $(LIBDIRW);$(LIBDIRC)
 lib kernel32,user32
-OP QUIET
-<<
-
-$(ODIR)\fte.exe: $(ODIR)\bin2c.exe $(ODIR)\cfte.exe $(ODIR)\defcfg.h $(FTE_OBJS)
-	@$(LD) $(LDFLAGS) @<<
-format windows pe runtime console
-NAME $(ODIR)\fte.exe
-FILE { $(FTE_OBJS) }
-libpath $(LIBDIRW);$(LIBDIRC)
-lib kernel32,user32
-OP QUIET,MAP=$*
+OP Q
 <<
 
 clean: .SYMBOLIC
